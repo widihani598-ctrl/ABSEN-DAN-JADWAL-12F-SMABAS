@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Absensi Digital & Jadwal Pelajaran</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#f4f7fb;
+      --accent-1: #1e3c72;
+      --accent-2: #2b6cb0;
+      --card:#ffffff;
+      --muted:#6b7280;
+      --danger:#e53e3e;
+    }
+    *{box-sizing:border-box}
+    body{
+      font-family: 'Poppins', 'Segoe UI', sans-serif;
+      background:linear-gradient(180deg,var(--bg) 0%, #eef4fb 100%);
+      margin:0;
+      color:#1f2937;
+      -webkit-font-smoothing:antialiased;
+    }
+    header{
+      background:linear-gradient(120deg,var(--accent-1),var(--accent-2));
+      color:#fff;
+      padding:28px 16px 36px;
+      text-align:center;
+      position:relative;
+      overflow:hidden;
+    }
+    header h1{margin:0;font-weight:600;letter-spacing:0.2px}
+    header p{margin:6px 0 0;opacity:0.95}
+    .school-name{margin-top:8px;font-weight:700;letter-spacing:0.6px;font-size:18px}
+    .motto{margin-top:6px;font-weight:300;font-size:13px;opacity:0.95}
+    /* decorative wave */
+    .wave{
+      position:absolute;left:0;right:0;bottom:0;height:64px;pointer-events:none;opacity:0.85;
+    }
+    main{padding:18px;max-width:1100px;margin: -28px auto 48px;display:grid;grid-template-columns:1fr;gap:16px}
+    /* responsive: place PR and Absensi side-by-side on wider screens */
+    @media(min-width:900px){
+      main{grid-template-columns:1fr 1fr;}
+      .full{grid-column:1/-1}
+    }
+    section{
+      background:var(--card);
+      border-radius:14px;
+      padding:18px;
+      margin:0;
+      box-shadow:0 8px 20px rgba(16,24,40,0.06);
+      border:1px solid rgba(16,24,40,0.03);
+    }
+    h2{margin-top:0;font-size:16px;color:var(--accent-1);display:flex;align-items:center;gap:8px}
+    input,button,select,textarea{
+      width:100%;
+      padding:12px;
+      margin-top:8px;
+      border-radius:10px;
+      border:1px solid #e6e9ef;
+      font-size:15px;
+      box-sizing:border-box;
+      background:#fff;
+    }
+    button{
+      background:var(--accent-1);
+      color:#fff;
+      border:none;
+      font-weight:600;
+      cursor:pointer;
+      transition:transform .12s ease, box-shadow .12s ease;
+    }
+    button:hover{transform:translateY(-2px);box-shadow:0 8px 18px rgba(30,60,114,0.12)}
+    .radio-group{display:flex;gap:10px;margin-top:8px}
+    .radio-group label{flex:1;text-align:center;padding:10px;border-radius:10px;border:1px solid #eef2ff;cursor:pointer;background:linear-gradient(0deg,#fff, #fbfdff)}
+    ul{padding-left:18px;margin:0}
+    .small-btn{display:inline-block;margin-left:8px;background:var(--danger);padding:6px 8px;border-radius:8px;font-size:13px;color:#fff;border:none}
+    .muted{color:var(--muted);font-size:13px}
+    /* subtle ornament blobs */
+    .blob{position:absolute;border-radius:50%;filter:blur(28px);opacity:0.12;pointer-events:none}
+    .blob.one{width:220px;height:220px;background:#7dd3fc;right:-60px;top:-40px}
+    .blob.two{width:160px;height:160px;background:#a78bfa;left:-40px;bottom:-40px}
+    /* list item styling */
+    #daftarAbsen li, #pr li, #jadwal li{padding:8px 6px;border-radius:8px;margin-bottom:8px;background:linear-gradient(0deg,#fff,#ffffff);border:1px solid rgba(15,23,42,0.03)}
+    a{color:var(--accent-2)}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="blob one" aria-hidden="true"></div>
+    <div class="blob two" aria-hidden="true"></div>
+    <h1>📘 Absensi Digital & Jadwal Pelajaran</h1>
+    <div class="school-name">SMA NEGERI 1 BATU SOPANG</div>
+    <div class="motto">Berakhlak, Cerdas, Bisa, Berprestasi</div>
+    <p id="tanggal" aria-live="polite"></p>
+    <svg class="wave" viewBox="0 0 1440 80" preserveAspectRatio="none" aria-hidden="true"><path fill="rgba(255,255,255,0.18)" d="M0,32 C120,80 360,0 720,40 C1080,80 1320,8 1440,40 L1440,80 L0,80 Z"></path></svg>
+  </header>
+
+  <main>
+    <section>
+      <h2>📅 Jadwal Mata Pelajaran Hari Ini</h2>
+      <ul id="jadwal" aria-live="polite"></ul>
+    </section>
+
+    <section>
+      <h2>📌 Daftar Tugas Rumah (PR)</h2>
+      <input type="text" id="inputPR" placeholder="Tulis tugas rumah jika ada" aria-label="Input PR" />
+      <div style="display:flex;gap:8px;margin-top:8px;">
+        <button id="tambahPrBtn" style="flex:1">Tambah PR</button>
+        <button id="clearPrBtn" class="small-btn" style="background:#6b7280">Bersihkan Semua</button>
+      </div>
+      <ul id="pr" aria-live="polite" style="margin-top:8px"></ul>
+    </section>
+
+    <section>
+      <h2>📝 Absensi Digital</h2>
+      <input type="text" id="nama" placeholder="Nama siswa" aria-label="Nama siswa" />
+      <div class="radio-group" role="radiogroup" aria-label="Status kehadiran">
+        <label><input type="radio" name="status" value="Hadir" checked> Hadir</label>
+        <label><input type="radio" name="status" value="Tidak Hadir"> Tidak Hadir</label>
+      </div>
+      <select id="alasan" aria-label="Alasan tidak hadir" style="display:none;margin-top:8px;">
+        <option value="">Pilih alasan (jika tidak hadir)</option>
+        <option value="Sakit">Sakit</option>
+        <option value="Izin">Izin</option>
+      </select>
+      <div style="display:flex;gap:8px;margin-top:8px;">
+        <button id="absenBtn" style="flex:1">Kirim Absensi</button>
+        <button id="clearAbsenBtn" class="small-btn" style="background:#6b7280">Bersihkan Hari Ini</button>
+      </div>
+      <p class="muted" id="absenInfo">Absensi tersimpan per tanggal.</p>
+      <ul id="daftarAbsen" aria-live="polite" style="margin-top:8px"></ul>
+    </section>
+  </main>
+
+  <script>
+    // Utility: escape text to avoid HTML injection when inserting user input
+    function escapeHTML(s){
+      return s.replace(/[&<>"']/g, function(m){
+        return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m];
+      });
+    }
+
+    // Date / Hari
+    const now = new Date();
+    const dayIndex = now.getDay(); // 0..6 (0 = Minggu)
+    const namaHari = ["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"];
+    const headerDateStr = `${namaHari[dayIndex]}, ${now.toLocaleDateString('id-ID')}`;
+    document.getElementById("tanggal").innerText = headerDateStr;
+
+    // Jadwal per hari (1..5 yang sesuai Senin..Jumat). Weekend => tidak ada.
+    const jadwalHarian = {
+      1: ["Prakarya", "Seni Budaya", "B. Indo", "Biologi"],
+      2: ["Pkn", "Sejarah", "Informatika", "Ekonomi", "MTK lanjut"],
+      3: ["Informatika", "PJOK", "Biologi", "MTK lanjut", "Agama"],
+      4: ["Ekonomi", "B.inggris", "MTK", "Bimbingan Konseling (BK)"],
+      5: ["Kurikuler semua Mapel"]
+    };
+
+    // Tampilkan jadwal hari ini
+    const jadwalList = document.getElementById("jadwal");
+    const jadwalUntukHari = jadwalHarian[dayIndex] || ["Tidak ada jadwal"];
+    jadwalUntukHari.forEach(mapel => {
+      const li = document.createElement("li");
+      li.textContent = mapel;
+      jadwalList.appendChild(li);
+    });
+
+    // ---------- PR (disimpan persistently di localStorage) ----------
+    const PR_STORAGE_KEY = 'prList_v1';
+    const prListEl = document.getElementById("pr");
+    function loadPRs(){
+      try{
+        return JSON.parse(localStorage.getItem(PR_STORAGE_KEY) || '[]');
+      }catch(e){ return []; }
+    }
+    function savePRs(arr){
+      localStorage.setItem(PR_STORAGE_KEY, JSON.stringify(arr));
+    }
+    function renderPRs(){
+      const prs = loadPRs();
+      prListEl.innerHTML = '';
+      if(prs.length === 0){
+        const li = document.createElement('li');
+        li.textContent = 'Tidak ada PR';
+        prListEl.appendChild(li);
+        return;
+      }
+      prs.forEach((p, idx) => {
+        const li = document.createElement('li');
+        li.innerHTML = `${escapeHTML(p)} <button class="small-btn" data-idx="${idx}" style="background:#e53e3e">Hapus</button>`;
+        prListEl.appendChild(li);
+      });
+    }
+
+    document.getElementById('tambahPrBtn').addEventListener('click', () => {
+      const input = document.getElementById('inputPR');
+      const val = input.value.trim();
+      if(!val) return alert('PR tidak boleh kosong');
+      const prs = loadPRs();
+      prs.push(val);
+      savePRs(prs);
+      input.value = '';
+      renderPRs();
+    });
+
+    document.getElementById('clearPrBtn').addEventListener('click', () => {
+      if(!confirm('Hapus semua PR?')) return;
+      savePRs([]);
+      renderPRs();
+    });
+
+    prListEl.addEventListener('click', (e) => {
+      if(e.target.matches('button[data-idx]')){
+        const idx = Number(e.target.getAttribute('data-idx'));
+        const prs = loadPRs();
+        prs.splice(idx, 1);
+        savePRs(prs);
+        renderPRs();
+      }
+    });
+
+    // ---------- Absensi (disimpan per tanggal) ----------
+    // Key format: absen_YYYY-MM-DD
+    function getDateKey(d = new Date()){
+      // use ISO yyyy-mm-dd for stable keys
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth()+1).padStart(2,'0');
+      const dd = String(d.getDate()).padStart(2,'0');
+      return `absen_${yyyy}-${mm}-${dd}`;
+    }
+    const absenListEl = document.getElementById('daftarAbsen');
+    const absenInfoEl = document.getElementById('absenInfo');
+    absenInfoEl.innerText = 'Absensi tersimpan per tanggal. Lokasi akan diminta saat mengirim.';
+
+    function loadAbsensiForKey(key){
+      try{
+        return JSON.parse(localStorage.getItem(key) || '[]');
+      }catch(e){ return []; }
+    }
+    function saveAbsensiForKey(key, arr){
+      localStorage.setItem(key, JSON.stringify(arr));
+    }
+
+    function renderAbsensi(){
+      const key = getDateKey();
+      const absensi = loadAbsensiForKey(key);
+      absenListEl.innerHTML = '';
+      if(absensi.length === 0){
+        const li = document.createElement('li');
+        li.textContent = 'Belum ada absensi hari ini';
+        absenListEl.appendChild(li);
+        return;
+      }
+      absensi.forEach((a, idx) => {
+        const li = document.createElement('li');
+        const terlambatMark = a.terlambat ? '(Terlambat)' : '';
+        let lokasiHtml = '';
+        if(a.lokasi && a.lokasi.lat != null){
+          const lat = String(a.lokasi.lat);
+          const lon = String(a.lokasi.lon);
+          const q = encodeURIComponent(lat + ',' + lon);
+          lokasiHtml = ` | <a href="https://www.google.com/maps?q=${q}" target="_blank" rel="noopener">Lihat Lokasi</a>`;
+        }
+        const alasanText = a.alasan ? ` - Alasan: ${escapeHTML(a.alasan)}` : '';
+        li.innerHTML = `${escapeHTML(a.nama)} - ${escapeHTML(a.status)}${alasanText} ${terlambatMark} | ${escapeHTML(a.jam)}${lokasiHtml} <button class="small-btn" data-idx="${idx}" style="background:#e53e3e">Hapus</button>`;
+        absenListEl.appendChild(li);
+      });
+    }
+
+    document.getElementById('absenBtn').addEventListener('click', () => {
+      const namaInput = document.getElementById('nama');
+      const nama = namaInput.value.trim();
+      if(!nama) return alert('Nama wajib diisi');
+      const status = document.querySelector('input[name="status"]:checked').value;
+      const alasanEl = document.getElementById('alasan');
+      const alasan = (status === 'Tidak Hadir') ? (alasanEl.value || '') : '';
+
+      const now = new Date();
+      const jam = now.toLocaleTimeString('id-ID', {hour:'2-digit',minute:'2-digit'});
+      const tanggalDisplay = now.toLocaleDateString('id-ID');
+
+      // Terlambat: jika setelah 07:30
+      const h = now.getHours();
+      const m = now.getMinutes();
+      const terlambat = (h > 7) || (h === 7 && m > 30);
+
+      const key = getDateKey(now);
+
+      // prevent multiple absences for same name today (case-insensitive)
+      const existing = loadAbsensiForKey(key).some(a => a.nama.trim().toLowerCase() === nama.toLowerCase());
+      if(existing){
+        return alert('Nama ini sudah melakukan absensi hari ini');
+      }
+
+      const absenBtn = document.getElementById('absenBtn');
+      absenBtn.disabled = true;
+
+      function saveWithLocation(position){
+        const lokasi = position && position.coords ? { lat: position.coords.latitude, lon: position.coords.longitude } : null;
+        const data = { nama, status, alasan, jam, tanggal: tanggalDisplay, terlambat, lokasi };
+        const absensi = loadAbsensiForKey(key);
+        absensi.push(data);
+        saveAbsensiForKey(key, absensi);
+        renderAbsensi();
+        namaInput.value = '';
+        if(alasanEl) alasanEl.value = '';
+        absenBtn.disabled = false;
+      }
+
+      if(navigator.geolocation){
+        navigator.geolocation.getCurrentPosition(saveWithLocation, function(err){
+          saveWithLocation(null);
+        }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
+      } else {
+        saveWithLocation(null);
+      }
+    });
+
+    // show/hide alasan select when status changes
+    document.querySelectorAll('input[name="status"]').forEach(r => r.addEventListener('change', function(){
+      const alasanEl = document.getElementById('alasan');
+      if(!alasanEl) return;
+      if(document.querySelector('input[name="status"]:checked').value === 'Tidak Hadir'){
+        alasanEl.style.display = 'block';
+      } else {
+        alasanEl.style.display = 'none';
+        alasanEl.value = '';
+      }
+    }));
+
+    document.getElementById('clearAbsenBtn').addEventListener('click', () => {
+      if(!confirm('Hapus semua absensi hari ini?')) return;
+      localStorage.removeItem(getDateKey());
+      renderAbsensi();
+    });
+
+    absenListEl.addEventListener('click', (e) => {
+      if(e.target.matches('button[data-idx]')){
+        const idx = Number(e.target.getAttribute('data-idx'));
+        const key = getDateKey();
+        const arr = loadAbsensiForKey(key);
+        arr.splice(idx, 1);
+        saveAbsensiForKey(key, arr);
+        renderAbsensi();
+      }
+    });
+
+    // Inisialisasi tampilan pada load
+    renderPRs();
+    renderAbsensi();
+  </script>
+</body>
+</html>
